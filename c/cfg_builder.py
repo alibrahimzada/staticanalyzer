@@ -10,7 +10,14 @@ try:
     from tree_sitter import Language, Parser
     import tree_sitter_c as tsc
 except Exception:  # pragma: no cover - optional dependency
-    get_parser = None
+    Language = None
+    Parser = None
+    tsc = None
+
+try:  # Newer wheels ship a helper returning a ready-made parser
+    from tree_sitter_languages import get_parser as ts_get_parser
+except Exception:  # pragma: no cover - optional dependency
+    ts_get_parser = None
 
 
 class CFGBuilder:
@@ -21,12 +28,18 @@ class CFGBuilder:
         self.current_block = None
         self.separate_node_blocks = separate
         self.src = ""
-        # ``tree_sitter_languages`` may not be installed or compatible.  Try to
-        # obtain a parser and fall back to None on failure.
-        
+        # ``tree_sitter_languages`` or ``tree_sitter_c`` may not be installed or
+        # compatible.  Try to obtain a parser and fall back to ``None`` on
+        # failure so that tests relying on the simple fallback still run.
+
         try:
-            LANGUAGE = Language(tsc.language())
-            self.parser = Parser(LANGUAGE)
+            if ts_get_parser is not None:
+                self.parser = ts_get_parser("c")
+            elif Language is not None and Parser is not None and tsc is not None:
+                LANGUAGE = Language(tsc.language())
+                self.parser = Parser(LANGUAGE)
+            else:
+                self.parser = None
         except Exception:  # pragma: no cover - handled in tests
             self.parser = None
 
@@ -74,11 +87,11 @@ class CFGBuilder:
         root = tree.root_node
         method = None
         for child in root.named_children:
-            if child.type == 'method_declaration':
+            if child.type in ('method_declaration', 'function_definition'):
                 method = child
                 break
         body = method.child_by_field_name('body') if method else root
-        if body.type == 'block':
+        if body.type in ('block', 'compound_statement'):
             self.visit_block(body)
         else:
             self.visit(body)
@@ -158,8 +171,11 @@ class CFGBuilder:
             else_block = self.new_block()
             self.add_exit(self.current_block, else_block, self.invert(cond_text))
             self.current_block = else_block
-            if alternative.type == 'block':
+            if alternative.type in ('block', 'compound_statement'):
                 self.visit_block(alternative)
+            elif alternative.type == 'else_clause':
+                for child in alternative.named_children:
+                    self.visit(child)
             else:
                 self.visit(alternative)
             if not self.current_block.exits:
@@ -168,7 +184,7 @@ class CFGBuilder:
             self.add_exit(self.current_block, after_if, self.invert(cond_text))
         self.current_block = if_block
         consequence = node.child_by_field_name('consequence')
-        if consequence.type == 'block':
+        if consequence.type in ('block', 'compound_statement'):
             self.visit_block(consequence)
         else:
             self.visit(consequence)
@@ -190,7 +206,7 @@ class CFGBuilder:
         self.add_exit(self.current_block, after_while, self.invert(cond_text))
         self.current_block = while_block
         body = node.child_by_field_name('body')
-        if body.type == 'block':
+        if body.type in ('block', 'compound_statement'):
             self.visit_block(body)
         else:
             self.visit(body)
@@ -219,7 +235,7 @@ class CFGBuilder:
         self.after_loop_block_stack.append(after_for)
         self.current_block = for_block
         body = node.child_by_field_name('body')
-        if body.type == 'block':
+        if body.type in ('block', 'compound_statement'):
             self.visit_block(body)
         else:
             self.visit(body)
