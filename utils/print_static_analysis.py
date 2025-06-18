@@ -6,18 +6,9 @@ from collections import defaultdict, deque
 from tree_sitter import Language, Parser
 import tree_sitter_python as tspython
 import tree_sitter_java as tsjava
-try:
-    import tree_sitter_rust as tsrust
-except Exception:  # pragma: no cover - optional dependency
-    tsrust = None
-try:
-    import tree_sitter_go as tsgo
-except Exception:  # pragma: no cover - optional dependency
-    tsgo = None
-try:
-    import tree_sitter_c as tsc
-except Exception:  # pragma: no cover - optional dependency
-    tsc = None
+import tree_sitter_rust as tsrust
+import tree_sitter_go as tsgo
+import tree_sitter_c as tsc
 
 
 class DataFlowAnalyzer:
@@ -342,7 +333,6 @@ def pretty_print_cfg(nodes, preds, succs, mapping, entry_orig, header_label=None
                 for sl in nodes[sorig].split("\n"):
                     print(f"        {sl}")
         print()
-    print("-" * 40)
 
 
 def process_graph_recursively(graph, do_dataflow=False, variables=None):
@@ -543,8 +533,7 @@ def get_variables_from_source(args):
         LANGUAGE = Language(tsc.language())
 
     if LANGUAGE is None:
-        # Fallback: no parser available
-        return {"local_vars": [], "parameters": []}
+        raise ValueError(f"Unsupported language: {args.language}")
 
     parser = Parser(LANGUAGE)
 
