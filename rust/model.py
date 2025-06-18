@@ -38,8 +38,12 @@ class Block:
             text = stmt.text.decode()
             if stmt.type in (
                 "if_statement",
+                "if_expression",
                 "while_statement",
+                "while_expression",
                 "for_statement",
+                "for_expression",
+                "loop_expression",
                 "enhanced_for_statement",
                 "switch_expression",
                 "switch_statement",

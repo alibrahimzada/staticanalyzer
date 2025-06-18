@@ -149,11 +149,21 @@ class CFGBuilder:
             self.visit(child)
 
     def visit_expression_statement(self, node):
-        self.add_statement(self.current_block, node)
-        if self.separate_node_blocks:
-            new = self.new_block()
-            self.add_exit(self.current_block, new)
-            self.current_block = new
+        # Rust often wraps control-flow constructs like ``if`` or ``while``
+        # inside an ``expression_statement`` node.  When such a statement
+        # contains a known control-flow expression delegate to the dedicated
+        # visitor so that the CFG accurately reflects the branching
+        # structure.
+        expr = node.named_children[0] if node.named_children else None
+        handler = getattr(self, f"visit_{expr.type}", None) if expr else None
+        if handler is not None:
+            handler(expr)
+        else:
+            self.add_statement(self.current_block, node)
+            if self.separate_node_blocks:
+                new = self.new_block()
+                self.add_exit(self.current_block, new)
+                self.current_block = new
 
     visit_local_variable_declaration = visit_expression_statement
 
@@ -278,6 +288,14 @@ class CFGBuilder:
         self.after_switch_block_stack.pop()
 
     visit_switch_statement = visit_switch_expression
+
+    # Rust represents control-flow constructs as expressions.  Map these
+    # expression node types to the corresponding visitor methods used for
+    # statements so that both forms are handled uniformly.
+    visit_if_expression = visit_if_statement
+    visit_while_expression = visit_while_statement
+    visit_for_expression = visit_for_statement
+    visit_loop_expression = visit_while_statement
 
     def visit_return_statement(self, node):
         self.add_statement(self.current_block, node)
