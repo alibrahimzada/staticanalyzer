@@ -72,3 +72,11 @@ cfg.build_visual('example_java_cfg.dot', 'pdf')
 
 This produces a DOT file (`example_java_cfg.dot`) describing the control flow of
 the method which can be rendered with Graphviz.
+
+## Rust, Go and C Support
+
+StatiCFG includes minimal CFG builders for Rust, Go and C. They behave like the
+Java builder: if the appropriate tree-sitter bindings are installed they will be
+used, otherwise a simple line based parser provides a fallback. Usage mirrors
+the Java example; import the desired language package (`rust`, `go` or `c`) and
+call `CFGBuilder().build_from_file()` on your source file.
