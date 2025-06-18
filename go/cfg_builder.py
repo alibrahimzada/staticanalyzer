@@ -33,9 +33,7 @@ class CFGBuilder:
         # failure so that tests relying on the simple fallback still run.
 
         try:
-            if ts_get_parser is not None:
-                self.parser = ts_get_parser("go")
-            elif Language is not None and Parser is not None and tsgo is not None:
+            if Language is not None and Parser is not None and tsgo is not None:
                 LANGUAGE = Language(tsgo.language())
                 self.parser = Parser(LANGUAGE)
             else:
