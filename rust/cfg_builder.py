@@ -306,6 +306,8 @@ class CFGBuilder:
         self.cfg.finalblocks.append(self.current_block)
         self.current_block = self.new_block()
 
+    visit_return_expression = visit_return_statement
+
     def visit_break_statement(self, node):
         if self.after_switch_block_stack:
             self.add_exit(self.current_block, self.after_switch_block_stack[-1])
