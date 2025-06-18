@@ -167,6 +167,10 @@ class CFGBuilder:
 
     visit_local_variable_declaration = visit_expression_statement
 
+    # Treat compound statements like blocks so nested statements are visited
+    # individually.
+    visit_compound_statement = visit_block
+
     def visit_if_statement(self, node):
         self.add_statement(self.current_block, node)
         cond = node.child_by_field_name('condition')
@@ -186,7 +190,7 @@ class CFGBuilder:
                     self.visit(child)
             else:
                 self.visit(alternative)
-            if not self.current_block.exits:
+            if self.current_block.predecessors and not self.current_block.exits:
                 self.add_exit(self.current_block, after_if)
         else:
             self.add_exit(self.current_block, after_if, self.invert(cond_text))
@@ -196,7 +200,7 @@ class CFGBuilder:
             self.visit_block(consequence)
         else:
             self.visit(consequence)
-        if not self.current_block.exits:
+        if self.current_block.predecessors and not self.current_block.exits:
             self.add_exit(self.current_block, after_if)
         self.current_block = after_if
 
@@ -218,7 +222,7 @@ class CFGBuilder:
             self.visit_block(body)
         else:
             self.visit(body)
-        if not self.current_block.exits:
+        if self.current_block.predecessors and not self.current_block.exits:
             self.add_exit(self.current_block, loop_guard)
         self.current_block = after_while
         self.after_loop_block_stack.pop()
@@ -247,7 +251,7 @@ class CFGBuilder:
             self.visit_block(body)
         else:
             self.visit(body)
-        if not self.current_block.exits:
+        if self.current_block.predecessors and not self.current_block.exits:
             self.add_exit(self.current_block, loop_guard)
         self.current_block = after_for
         self.after_loop_block_stack.pop()
