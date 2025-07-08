@@ -80,3 +80,18 @@ Java builder: if the appropriate tree-sitter bindings are installed they will be
 used, otherwise a simple line based parser provides a fallback. Usage mirrors
 the Java example; import the desired language package (`rust`, `go` or `c`) and
 call `CFGBuilder().build_from_file()` on your source file.
+
+## JavaScript Support
+
+A basic CFG builder for JavaScript is also available. Usage mirrors the Java
+example:
+
+```python
+from javascript import CFGBuilder
+
+cfg = CFGBuilder().build_from_file('example.js', './example.js')
+cfg.build_visual('example_js_cfg.dot', 'pdf')
+```
+
+Like the other builders, it relies on Tree-sitter for parsing when available and
+falls back to a very simple line based parser otherwise.
