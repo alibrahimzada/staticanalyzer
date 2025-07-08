@@ -89,7 +89,7 @@ class CFGBuilder:
                 method = child
                 break
         body = method.child_by_field_name('body') if method else root
-        if body.type in ('statement_block', 'block', 'compound_statement'):
+        if body.type in ('statement_block', 'block', 'compound_statement', 'program'):
             self.visit_block(body)
         else:
             self.visit(body)
@@ -147,6 +147,8 @@ class CFGBuilder:
     def visit_block(self, node):
         for child in node.named_children:
             self.visit(child)
+
+    visit_program = visit_block
 
     def visit_expression_statement(self, node):
         self.add_statement(self.current_block, node)
